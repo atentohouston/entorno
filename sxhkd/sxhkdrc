@@ -114,7 +114,7 @@ super + shift + {Left,Down,Up,Right}
 	bspc node -v {-20 0,0 20,0 -20,20 0}
 
 super + alt + {Left,Down,Up,Right}
-	/home/magnetist/.config/bspwm/scripts/bspwm_resize {west,south,north,east}
+    $HOME/.config/bspwm/scripts/bspwm_resize {west,south,north,east}
 
 #Lock screen
 super + shift + x
