@@ -20,10 +20,9 @@ echo "[*] Actualizando sistema..."
 sudo apt update -y
 echo "[+] Sistema actualizado"
 
-# Obtener carpeta de descargas sin importar el idioma
-DOWNLOADS=$(xdg-user-dirs-query DOWNLOAD)
-# Obtener carpeta de escritorio
-DESKTOP=$(xdg-user-dirs-query DESKTOP)
+# Obtener carpeta de descargas y escritorio sin importar el idioma
+DOWNLOADS=$(grep "^XDG_DOWNLOAD_DIR" "$HOME/.config/user-dirs.dirs" | cut -d '"' -f 2 | envsubst)
+DESKTOP=$(grep "^XDG_DESKTOP_DIR" "$HOME/.config/user-dirs.dirs" | cut -d '"' -f 2 | envsubst)
 
 # Clonar repositorios
 echo "[*] Clonando bspwm y sxhkd..."
