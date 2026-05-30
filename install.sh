@@ -53,7 +53,7 @@ echo "[+] Repositorio clonado"
 
 # Mover configuraciones a ~/.config
 echo "[*] Moviendo configuraciones a ~/.config..."
-for dir in bspwm kitty nvim picom polybar rofi scripts sxhkd bin; do
+for dir in bspwm kitty picom polybar rofi scripts sxhkd bin; do
     if [ -d "$DOWNLOADS/entorno/$dir" ]; then
         mv "$DOWNLOADS/entorno/$dir" "$HOME/.config/"
         echo "[+] $dir movido a ~/.config"
