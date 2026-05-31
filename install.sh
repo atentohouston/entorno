@@ -6,6 +6,10 @@ if [ "$EUID" -eq 0 ]; then
     exit 1
 fi
 
+echo "[*] Actualizando sistema..."
+sudo apt update -y
+sudo apt upgrade -y 
+
 # Instalar dependencias
 echo "[*] Instalando dependencias de bspwm y sxhkd..."
 sudo apt install -y build-essential git vim \
@@ -15,12 +19,8 @@ sudo apt install -y build-essential git vim \
     libxcb-xtest0-dev libxcb-shape0-dev
 echo "[+] Dependencias instaladas"
 
-# Actualizar sistema
-echo "[*] Actualizando sistema..."
-sudo apt update -y
-echo "[+] Sistema actualizado"
 
-# Obtener carpeta de descargas y escritorio sin importar el idioma
+# Obtener carpeta de descargas y escritorio
 DOWNLOADS=$(grep "^XDG_DOWNLOAD_DIR" "$HOME/.config/user-dirs.dirs" | cut -d '"' -f 2 | envsubst)
 DESKTOP=$(grep "^XDG_DESKTOP_DIR" "$HOME/.config/user-dirs.dirs" | cut -d '"' -f 2 | envsubst)
 
@@ -47,13 +47,13 @@ echo "[+] sxhkd instalado"
 
 # Clonar repo de configuraciones
 echo "[*] Clonando repositorio de configuraciones..."
-cd "$DOWNLOADS"
+cd $DOWNLOADS
 git clone https://github.com/atentohouston/entorno.git
 echo "[+] Repositorio clonado"
 
 # Mover configuraciones a ~/.config
 echo "[*] Moviendo configuraciones a ~/.config..."
-for dir in bspwm kitty picom polybar rofi scripts sxhkd bin; do
+for dir in bspwm kitty picom polybar scripts sxhkd bin; do
     if [ -d "$DOWNLOADS/entorno/$dir" ]; then
         mv "$DOWNLOADS/entorno/$dir" "$HOME/.config/"
         echo "[+] $dir movido a ~/.config"
@@ -71,6 +71,29 @@ if [ -d "$DOWNLOADS/entorno/Fondos" ]; then
     echo "[+] Fondos movido a $DESKTOP"
 else
     echo "[-] No se encontró la carpeta Fondos en el repositorio"
+fi
+
+# Mover zshrc del usuario estándar
+echo "[*] Configurando zshrc del usuario estándar..."
+if [ -f "$DOWNLOADS/entorno/zshrc" ]; then
+    if [ -f "$HOME/.zshrc" ]; then
+        mv "$HOME/.zshrc" "$HOME/.zshrc.bak"
+        echo "[!] .zshrc existente respaldado como .zshrc.bak"
+    fi
+    cp "$DOWNLOADS/entorno/zshrc" "$HOME/.zshrc"
+    echo "[+] zshrc configurado para $USER"
+else
+    echo "[-] No se encontró zshrc en el repositorio"
+fi
+
+
+# Mover zshrc de root
+echo "[*] Moviendo zshrc de root..."
+if [ -f "$DOWNLOADS/entorno/zshrcderoot/zshrc" ]; then
+    sudo cp "$DOWNLOADS/entorno/zshrcderoot/zshrc" /root/.zshrc
+    echo "[+] zshrc de root configurado"
+else
+    echo "[-] No se encontró zshrcderoot/zshrc en el repositorio"
 fi
 
 # Instalar polybar
@@ -112,6 +135,8 @@ sudo cp "$DOWNLOADS/bspwm/contrib/freedesktop/bspwm.desktop" /usr/share/xsession
 echo "[+] bspwm registrado en /usr/share/xsessions/"
 
 
+
+
 # Instalar Hack Nerd Font
 echo "[*] Descargando Hack Nerd Font..."
 HACK_URL=$(curl -s https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest \
@@ -125,16 +150,22 @@ sudo mv "$DOWNLOADS/Hack.zip" /usr/local/share/fonts
 sudo unzip /usr/local/share/fonts/Hack.zip -d /usr/local/share/fonts
 echo "[+] Hack Nerd Font instalada"
 
-sudo apt install -y zsh
 
-# Actualizar kitty a la última versión
-echo "[*] Removiendo kitty anterior..."
+
+
+
+
+sudo apt install -y zsh
 sudo apt remove -y kitty
-echo "[+] Kitty removido"
+
+
+
+
 
 echo "[*] Descargando última versión de kitty..."
 KITTY_URL=$(curl -s https://api.github.com/repos/kovidgoyal/kitty/releases/latest \
-    | grep "browser_download_url.*x86_64.txz" \
+    | grep "browser_download_url.*x86_64\.txz\"" \
+    | grep -v "\.sig" \
     | cut -d '"' -f 4)
 wget -P "$DOWNLOADS" "$KITTY_URL"
 echo "[+] Kitty descargado"
@@ -147,75 +178,20 @@ sudo 7z x "/opt/kitty/$KITTY_FILE" -o/opt/kitty
 sudo tar -xf "/opt/kitty/${KITTY_FILE%.txz}.tar" -C /opt/kitty
 echo "[+] Kitty instalado en /opt/kitty"
 
-# Configurar kitty para root
-echo "[*] Configurando kitty para root..."
-sudo mkdir -p /root/.config/kitty
-sudo cp $HOME/.config/kitty/* /root/.config/kitty
-echo "[+] Configuración de kitty copiada a root"
-
-sudo apt install -y feh
-sudo apt install -y dunst
-sudo apt install -y imagemagick
-
-# Clonar blue-sky
-echo "[*] Clonando blue-sky..."
-cd "$DOWNLOADS"
-git clone https://github.com/VaughnValle/blue-sky.git
-echo "[+] blue-sky clonado"
-
-# Copiar configuración de polybar
-echo "[*] Copiando configuración de polybar..."
-cp -r "$DOWNLOADS/blue-sky/polybar/"* "$HOME/.config/polybar"
-echo "[+] Configuración de polybar copiada"
-
-# Instalar fuentes de polybar
-echo "[*] Instalando fuentes de polybar..."
-sudo cp -r "$DOWNLOADS/blue-sky/polybar/fonts" /usr/share/fonts/truetype
-echo "[+] Fuentes instaladas"
-
-# Actualizar caché de fuentes
-echo "[*] Actualizando caché de fuentes..."
-fc-cache -v
-echo "[+] Caché de fuentes actualizada"
 
 
-# Instalar plugins de zsh
-echo "[*] Instalando plugins de zsh..."
-sudo apt install -y zsh-autosuggestions zsh-syntax-highlighting
-echo "[+] Plugins de zsh instalados"
 
 
-# Instalar powerlevel10k
-echo "[*] Instalando powerlevel10k..."
-sudo cp -r "$DOWNLOADS/entorno/powerlevel10k" /opt/powerlevel10k
-echo "[+] Powerlevel10k instalado"
 
-# Copiar p10k.zsh para usuario normal y root
-echo "[*] Configurando p10k.zsh..."
-cp "$DOWNLOADS/entorno/p10k.zsh" "$HOME/.p10k.zsh"
-sudo cp "$DOWNLOADS/entorno/p10k.zsh" /root/.p10k.zsh
-echo "[+] p10k.zsh configurado para $USER y root"
 
-# Copiar zshrc desde el repo
-echo "[*] Configurando zshrc..."
-cp "$DOWNLOADS/entorno/zshrc" "$HOME/.zshrc"
-echo "[+] zshrc configurado"
 
-# Crear enlace simbólico de .zshrc para root
-echo "[*] Creando enlace simbólico de .zshrc para root..."
-sudo ln -s -f "$HOME/.zshrc" /root/.zshrc
-echo "[+] Enlace simbólico creado"
 
-# Instalar plugin sudo para zsh
-echo "[*] Instalando plugin sudo para zsh..."
-sudo mkdir -p /usr/share/zsh-sudo
-sudo wget -P /usr/share/zsh-sudo https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/refs/heads/master/plugins/sudo/sudo.plugin.zsh
-echo "[+] Plugin sudo instalado"
 
 # Instalar batcat
 echo "[*] Descargando batcat..."
 BAT_URL=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest \
-    | grep "browser_download_url.*amd64.deb" \
+    | grep "browser_download_url.*bat_.*amd64.deb" \
+    | grep -v "musl" \
     | cut -d '"' -f 4)
 wget -P "$DOWNLOADS" "$BAT_URL"
 echo "[+] Batcat descargado"
@@ -228,7 +204,8 @@ echo "[+] Batcat instalado"
 # Instalar lsd
 echo "[*] Descargando lsd..."
 LSD_URL=$(curl -s https://api.github.com/repos/lsd-rs/lsd/releases/latest \
-    | grep "browser_download_url.*amd64.deb" \
+    | grep "browser_download_url.*lsd_.*amd64.deb" \
+    | grep -v "musl" \
     | cut -d '"' -f 4)
 wget -P "$DOWNLOADS" "$LSD_URL"
 echo "[+] lsd descargado"
@@ -238,19 +215,80 @@ LSD_FILE=$(basename "$LSD_URL")
 sudo dpkg -i "$DOWNLOADS/$LSD_FILE"
 echo "[+] lsd instalado"
 
-touch ~/.config/bin/target
-
-# Instalar fzf para usuario normal
-echo "[*] Instalando fzf para $USER..."
-git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME/.fzf"
-"$HOME/.fzf/install" --all
-echo "[+] fzf instalado para $USER"
-
-# Instalar fzf para root
-echo "[*] Instalando fzf para root..."
-sudo git clone --depth 1 https://github.com/junegunn/fzf.git /root/.fzf
-sudo /root/.fzf/install --all
-echo "[+] fzf instalado para root"
 
 
 
+
+
+
+
+
+echo "[*] Configurando kitty para root..."
+sudo mkdir -p /root/.config/kitty
+sudo cp "$HOME/.config/kitty/"* /root/.config/kitty
+echo "[+] Configuración de kitty copiada a root"
+
+sudo apt install -y feh
+sudo apt install -y dunst
+sudo apt install -y imagemagick
+
+
+# Clonar blue-sky
+echo "[*] Clonando blue-sky..."
+cd "$DOWNLOADS"
+git clone https://github.com/VaughnValle/blue-sky.git
+echo "[+] blue-sky clonado"
+
+
+# Instalar fuentes de polybar
+echo "[*] Instalando fuentes de polybar..."
+sudo cp -r "$DOWNLOADS/blue-sky/polybar/fonts" /usr/share/fonts/truetype
+echo "[+] Fuentes instaladas"
+
+
+# Actualizar caché de fuentes
+echo "[*] Actualizando caché de fuentes..."
+fc-cache -v
+echo "[+] Caché de fuentes actualizada"
+
+# Instalar plugins de zsh
+echo "[*] Instalando plugins de zsh..."
+sudo apt install -y zsh-autosuggestions zsh-syntax-highlighting
+echo "[+] Plugins de zsh instalados"
+
+
+cd $HOME && git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k
+
+zsh
+
+# Ahora lo hacemos con root
+
+sudo git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /root/powerlevel10k
+
+
+# Copiar p10k.zsh para usuario normal y root
+echo "[*] Configurando p10k.zsh..."
+cp "$DOWNLOADS/entorno/p10k.zsh" "$HOME/.p10k.zsh"
+sudo cp "$DOWNLOADS/entorno/p10k.zsh" /root/.p10k.zsh
+echo "[+] p10k.zsh configurado para $USER y root"
+
+sudo ln -s -f $HOME/.zshrc /root/.zshrc
+
+# Dar permisos de ejecución a los scripts
+echo "[*] Configurando permisos..."
+chmod 775 "$HOME/.config/bspwm/bspwmrc"
+chmod 664 "$HOME/.config/sxhkd/sxhkdrc"
+chmod 775 "$HOME/.config/scripts/"*
+chmod 775 "$HOME/.config/polybar/launch.sh"
+echo "[+] Permisos configurados"
+
+sudo chown root:root /usr/local/share/zsh/site-functions/_bspc
+
+# Instalar Hack Nerd Font
+# Instalar última versión de kitty IMPORTANTE PARA QUE PODAMOS USAR EL ENTORNO
+# Instsalar batcat
+# Instalar lsd
+# Intalar fzf
+# Desintalar neovim e instalar última versión
+# Cambiar el tema de rofi
+# instalar i3lock
