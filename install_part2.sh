@@ -28,5 +28,7 @@ chmod 775 "$HOME/.config/bspwm/bspwmrc"
 chmod 664 "$HOME/.config/sxhkd/sxhkdrc"
 chmod 775 "$HOME/.config/scripts/"*
 chmod 775 "$HOME/.config/polybar/launch.sh"
+chmod +x "$HOME/.config/polybar/scripts/powermenu"
+chmod +x "$HOME/.config/polybar/scripts/powermenu_alt"
 
 echo "[+] Permisos configurados"
